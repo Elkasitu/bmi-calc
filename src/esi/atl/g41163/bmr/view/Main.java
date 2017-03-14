@@ -1,7 +1,11 @@
 package esi.atl.g41163.bmr.view;
 
+import esi.atl.g41163.bmr.model.BmiMath.*;
+import static esi.atl.g41163.bmr.model.BmiMath.getBmi;
+import static esi.atl.g41163.bmr.model.BmiMath.getCal;
 import esi.atl.g41163.bmr.model.Lifestyles;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import javafx.application.Application;
 import javafx.collections.FXCollections;
@@ -25,7 +29,7 @@ import javafx.stage.Stage;
 /**
  * BMR Application Main class
  * @author Adrian Torres
- * @version 1.0
+ * @version 1.1
  * @since 2017-02-28
  */
 public class Main extends Application
@@ -60,59 +64,44 @@ public class Main extends Application
         return layout;
     }
     
-    private Label createDataLabel()
+    private Label createTitle(String text)
     {
-        Label label = new Label("Data:");
+        Label label = new Label(text);
         label.setFont(Font.font("Arial", FontWeight.BOLD, 12));
         label.setUnderline(true);
         
         return label;
     }
     
-    private void setupDataLabels(GridPane data)
+    private void setupLabels(GridPane pane, String[] labels, String title)
     {
-        data.add(createDataLabel(), 0, 0);
-        
-        String[] labelTxt = {"Size in cm", "Weight in kg", "Age in years",
-                             "Gender", "Lifestyle"};
-        
-        for (int i = 0; i < labelTxt.length; i++)
+        pane.add(createTitle(title + ":"), 0, 0);
+
+        for (int i = 0; i < labels.length; i++)
         {
-            data.add(new Label(labelTxt[i]), 0, (i + 1));
+            pane.add(new Label(labels[i]), 0, (i + 1));
         }
     }
     
-    private List<TextField> setupDataFields(GridPane data)
+    private List<TextField> setupFields(GridPane pane, String[] labels)
     {
         List<TextField> fields = new ArrayList();
-        String[] fieldTxt = {"Size (cm)", "Weight(kg)", "Age (years)"};
         
-        for (int i = 0; i < fieldTxt.length; i++)
+        for (int i = 0; i < labels.length; i++)
         {
             TextField field = new TextField();
-            field.setPromptText(fieldTxt[i]);
+            field.setPromptText(labels[i]);
             fields.add(field);
-            data.add(field, 1, (i + 1));
+            pane.add(field, 1, (i + 1));
         }
         
         return fields;
     }
     
-
-    
-    @Override
-    public void start(Stage primaryStage)
+    private RadioButton setupRadio(GridPane data)
     {
-        VBox root = setupVBox();
-        HBox columns = setupHBox();
-        GridPane data = setupGrid();
-        
-        setupDataLabels(data);
-        
-        List<TextField> fields = setupDataFields(data);
-
-
         ToggleGroup group = new ToggleGroup();
+        
         RadioButton gInput = new RadioButton("Male");
         gInput.setToggleGroup(group);
         gInput.setSelected(true);
@@ -124,110 +113,118 @@ public class Main extends Application
         radio.getChildren().addAll(gInput, gInput2);
         data.add(radio, 1, 4);
         
+        return gInput;
+    }
+    
+    private ChoiceBox setupCBox(GridPane data)
+    {
+        ChoiceBox ls = new ChoiceBox(FXCollections.observableArrayList(Lifestyles.values()));
+        ls.getSelectionModel().selectFirst();
+        data.add(ls, 1, 5);
+        
+        return ls;
+    }
+    
+    private boolean isEmpty(List<TextField> dFields)
+    {
+        return (dFields.get(0).getText().equals("") ||
+                dFields.get(1).getText().equals("") ||
+                dFields.get(2).getText().equals(""));
+    }
+    
+    private void fail(List<TextField> rFields)
+    {
+        for (TextField field : rFields)
+        {
+            field.setStyle("-fx-text-inner-color: red;");
+            field.setText("Failed!");
+        }
+    }
+    
+    private void succeed(List<TextField> rFields, double[] out)
+    {
+        for (int i = 0; i < out.length; i++)
+        {
+            rFields.get(i).setStyle("-fx-text-inner-color: black;");
+            rFields.get(i).setText(String.valueOf(out[i]));
+        }
+    }
+    
+    private boolean isGoodInput(List<TextField> dFields)
+    {
+        for (TextField field : dFields)
+        {
+            try
+            {
+                Double.parseDouble(field.getText());
+            }
+            catch (NumberFormatException e)
+            {
+                return false;
+            }
+        }
+        
+        return true;
+    }
+    
+    @Override
+    public void start(Stage primaryStage)
+    {
+        VBox root = setupVBox();
+        HBox columns = setupHBox();
+        GridPane data = setupGrid();
+        GridPane results = setupGrid();
 
-        ChoiceBox lsInput = new ChoiceBox(FXCollections.observableArrayList(
-        Lifestyles.values()));
-        data.add(lsInput, 1, 5);
-        
-        // GridPane to the right of the HBox, represents the results
-        GridPane results = new GridPane();
-        results.setHgap(10);
-        results.setVgap(10);
-        results.setPadding(new Insets(0, 10, 0, 10));
-        
-        // We create the results's title
-        Label title2 = new Label("Results:");
-        title2.setFont(Font.font("Arial", FontWeight.BOLD, 12));
-        title2.setUnderline(true);
-        results.add(title2, 0, 0);
-        
-        // We add the BMR label and text field
-        String bmrString = "BMR Results";
-        Label bmrLabel = new Label(bmrString);
-        results.add(bmrLabel, 0, 1);
-        TextField bmrInput = new TextField();
-        bmrInput.setPromptText(bmrString);
-        results.add(bmrInput, 1, 1);
-        
-        // We add the Calories label and text field
-        String calString = "Calories expenses";
-        Label calLabel = new Label(calString);
-        results.add(calLabel, 0, 2);
-        TextField calInput = new TextField();
-        calInput.setPromptText(calString);
-        results.add(calInput, 1, 2);
-        
-        // Add both grids to the hbox
-        columns.getChildren().addAll(data, results);
+        // Left column - Data
+        String[] dLabels = {"Size in cm", "Weight in kg", "Age in years",
+        "Gender", "Lifestyle"};
+        setupLabels(data, dLabels, "Data");
+        // Subset of dLabels since Gender and Lifestyle are not TextFields
+        List<TextField> dFields = setupFields(data, Arrays.copyOfRange(dLabels, 0, 3));
+        RadioButton gender = setupRadio(data);
+        ChoiceBox lifestyle = setupCBox(data);
+
+        // Right column - Results
+        String[] rLabels = {"BMR Results", "Calories expenses"};
+        setupLabels(results, rLabels, "Results");
+        List<TextField> rFields = setupFields(results, rLabels);
         
         // Create calculate button
         Button btn = new Button();
         HBox.setHgrow(btn, Priority.ALWAYS);
         btn.setMaxWidth(Double.MAX_VALUE);
-        
         btn.setText("Calculate BMI");
+        
+        // We add all the respective elements to their parent layouts
+        columns.getChildren().addAll(data, results);
+        root.getChildren().addAll(columns, btn);
+        
+        // We define the button's action
         btn.setOnAction((ActionEvent event) ->
         {
-            if ("".equals(fields.get(0).getText()) ||
-                "".equals(fields.get(1).getText()) ||
-                "".equals(fields.get(2).getText()) ||
-                lsInput.getValue() == null)
+            // We reject empty or non-double input
+            if (isEmpty(dFields) || !isGoodInput(dFields.subList(0, 3)))
             {
-                bmrInput.setText("Failed!");
-                calInput.setText("Failed!");
-                System.out.println(lsInput.getValue());
+                fail(rFields);
             }
             else
             {
                 // Parse input
-                double s = Double.parseDouble(fields.get(0).getText());
-                double w = Double.parseDouble(fields.get(1).getText());
-                double a = Double.parseDouble(fields.get(2).getText());
+                double s = Double.parseDouble(dFields.get(0).getText());
+                double w = Double.parseDouble(dFields.get(1).getText());
+                double a = Double.parseDouble(dFields.get(2).getText());
                 
-                double multiplier = 1;
-                    
-                    switch (lsInput.getValue().toString())
-                    {
-                        case "Sedentary":
-                            multiplier = 1.2;
-                            break;
-                        case "Little active":
-                            multiplier = 1.375;
-                            break;
-                        case "Active":
-                            multiplier = 1.55;
-                            break;
-                        case "Very active":
-                            multiplier = 1.725;
-                            break;
-                        case "Extremely active":
-                            multiplier = 1.9;
-                            break;
-                    }
+                Lifestyles ls = (Lifestyles) lifestyle.getValue();
+                double multiplier = ls.getMult();
+                boolean g = gender.selectedProperty().get();
                 
-                    double bmi;
-                    double cal;
+                double bmi = getBmi(s, w, a, g);
+                double cal = getCal(bmi, multiplier);
                 
-                if (gInput.selectedProperty().get())
-                {
-                    //Male
-                    bmi = 13.7 * w + 5 * s - 6.8 * a + 66;
-                    cal = bmi * multiplier;
-                }
-                else
-                {
-                    //Female
-                    bmi = 9.6 * w + 1.8 * s - 4.7 * a + 655;
-                    cal = bmi * multiplier;
-                }
-                
-                bmrInput.setText(String.valueOf(bmi));
-                calInput.setText(String.valueOf(cal));
+                succeed(rFields, new double[] {bmi, cal});
                 
             }
         });
-        
-        root.getChildren().addAll(columns, btn);
         
         Scene scene = new Scene(root);
         
