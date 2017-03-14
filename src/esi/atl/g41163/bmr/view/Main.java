@@ -1,9 +1,11 @@
-package esi.atl.g41163.bmr;
+package esi.atl.g41163.bmr.view;
 
+import esi.atl.g41163.bmr.model.Lifestyles;
+import java.util.ArrayList;
+import java.util.List;
 import javafx.application.Application;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -18,7 +20,6 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
-import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
 /**
@@ -28,61 +29,89 @@ import javafx.stage.Stage;
  * @since 2017-02-28
  */
 public class Main extends Application
-{
+{   
+    private VBox setupVBox()
+    {
+        // VBox is the root of all elements in the UI
+        VBox layout = new VBox();
+        layout.setPadding(new Insets(10));
+        layout.setSpacing(8);
+        
+        return layout;
+    }
+    
+    private HBox setupHBox()
+    {
+        // HBox will contain the two columns for data and results
+        HBox layout = new HBox();
+        layout.setPadding(new Insets(15, 12, 15, 12));
+        
+        return layout;
+    }
+    
+    private GridPane setupGrid()
+    {
+        // GridPane to the left of the HBox, represents user-inputted data
+        GridPane layout = new GridPane();
+        layout.setHgap(10);
+        layout.setVgap(10);
+        layout.setPadding(new Insets(0, 10, 0, 10));
+        
+        return layout;
+    }
+    
+    private Label createDataLabel()
+    {
+        Label label = new Label("Data:");
+        label.setFont(Font.font("Arial", FontWeight.BOLD, 12));
+        label.setUnderline(true);
+        
+        return label;
+    }
+    
+    private void setupDataLabels(GridPane data)
+    {
+        data.add(createDataLabel(), 0, 0);
+        
+        String[] labelTxt = {"Size in cm", "Weight in kg", "Age in years",
+                             "Gender", "Lifestyle"};
+        
+        for (int i = 0; i < labelTxt.length; i++)
+        {
+            data.add(new Label(labelTxt[i]), 0, (i + 1));
+        }
+    }
+    
+    private List<TextField> setupDataFields(GridPane data)
+    {
+        List<TextField> fields = new ArrayList();
+        String[] fieldTxt = {"Size (cm)", "Weight(kg)", "Age (years)"};
+        
+        for (int i = 0; i < fieldTxt.length; i++)
+        {
+            TextField field = new TextField();
+            field.setPromptText(fieldTxt[i]);
+            fields.add(field);
+            data.add(field, 1, (i + 1));
+        }
+        
+        return fields;
+    }
+    
+
     
     @Override
     public void start(Stage primaryStage)
     {
-        // VBox is the root of all elements in the UI
-        VBox root = new VBox();
-        root.setPadding(new Insets(10));
-        root.setSpacing(8);
+        VBox root = setupVBox();
+        HBox columns = setupHBox();
+        GridPane data = setupGrid();
         
-        // HBox will contain the two columns for data and results
-        HBox columns = new HBox();
-        columns.setPadding(new Insets(15, 12, 15, 12));
+        setupDataLabels(data);
         
-        // GridPane to the left of the HBox, represents user-inputted data
-        GridPane data = new GridPane();
-        data.setHgap(10);
-        data.setVgap(10);
-        data.setPadding(new Insets(0, 10, 0, 10));
-        
-        // We create the data's title
-        Label title = new Label("Data:");
-        title.setFont(Font.font("Arial", FontWeight.BOLD, 12));
-        title.setUnderline(true);
-        data.add(title, 0, 0);
-        
-        // We add the size label and text field
-        String sizeString = "Size (cm)";
-        Label sizeLabel = new Label(sizeString);
-        data.add(sizeLabel, 0, 1);
-        TextField sizeInput = new TextField();
-        sizeInput.setPromptText(sizeString);
-        data.add(sizeInput, 1, 1);
-        
-        // We add the weight label and text field
-        String weightString = "Weight (kg)";
-        Label weightLabel = new Label(weightString);
-        data.add(weightLabel, 0, 2);
-        TextField weightInput = new TextField();
-        weightInput.setPromptText(weightString);
-        data.add(weightInput, 1, 2);
-        
-        // We add the age label and text field
-        String ageString = "Age (years)";
-        Label ageLabel = new Label(ageString);
-        data.add(ageLabel, 0, 3);
-        TextField ageInput = new TextField();
-        ageInput.setPromptText(ageString);
-        data.add(ageInput, 1, 3);
-        
-        // We add the gender label and radio button
-        String gString = "Gender";                              // I'm hilarious
-        Label gLabel = new Label(gString);
-        data.add(gLabel, 0, 4);
-        
+        List<TextField> fields = setupDataFields(data);
+
+
         ToggleGroup group = new ToggleGroup();
         RadioButton gInput = new RadioButton("Male");
         gInput.setToggleGroup(group);
@@ -95,14 +124,9 @@ public class Main extends Application
         radio.getChildren().addAll(gInput, gInput2);
         data.add(radio, 1, 4);
         
-        // We add the Lifestyle label and Lifestyle ChoiceBox
-        String lifestyleString = "Lifestyle";
-        Label lifestyleLabel = new Label(lifestyleString);
-        data.add(lifestyleLabel, 0, 5);
+
         ChoiceBox lsInput = new ChoiceBox(FXCollections.observableArrayList(
-            Lifestyles.SEDENTARY.getValue(), Lifestyles.L_ACTIVE.getValue(),
-            Lifestyles.ACTIVE.getValue(), Lifestyles.V_ACTIVE.getValue(),
-            Lifestyles.E_ACTIVE.getValue()));
+        Lifestyles.values()));
         data.add(lsInput, 1, 5);
         
         // GridPane to the right of the HBox, represents the results
@@ -144,9 +168,9 @@ public class Main extends Application
         btn.setText("Calculate BMI");
         btn.setOnAction((ActionEvent event) ->
         {
-            if ("".equals(sizeInput.getText()) ||
-                "".equals(weightInput.getText()) ||
-                "".equals(ageInput.getText()) ||
+            if ("".equals(fields.get(0).getText()) ||
+                "".equals(fields.get(1).getText()) ||
+                "".equals(fields.get(2).getText()) ||
                 lsInput.getValue() == null)
             {
                 bmrInput.setText("Failed!");
@@ -156,9 +180,9 @@ public class Main extends Application
             else
             {
                 // Parse input
-                double w = Double.parseDouble(weightInput.getText());
-                double s = Double.parseDouble(sizeInput.getText());
-                double a = Double.parseDouble(ageInput.getText());
+                double s = Double.parseDouble(fields.get(0).getText());
+                double w = Double.parseDouble(fields.get(1).getText());
+                double a = Double.parseDouble(fields.get(2).getText());
                 
                 double multiplier = 1;
                     

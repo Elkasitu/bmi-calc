@@ -4,7 +4,7 @@
  * and open the template in the editor.
  */
 
-package esi.atl.g41163.bmr;
+package esi.atl.g41163.bmr.model;
 
 /**
  * Enum representing the different Lifestyles for the BMR Application
