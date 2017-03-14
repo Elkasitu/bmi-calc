@@ -29,17 +29,26 @@ public enum Lifestyles
         this.multiplier = multiplier;
     }
     
+    /**
+     * Gets the human-readable representation of this item
+     * @return A string representing the item in human-readable form
+     */
     public String getValue()
     {
         return this.value;
     }
     
+
     @Override
     public String toString()
     {
         return this.getValue();
     }
     
+    /**
+     * Gets the double corresponding to this item
+     * @return A double representing the multiplier associated with the lifestyle
+     */
     public double getMult()
     {
         return this.multiplier;

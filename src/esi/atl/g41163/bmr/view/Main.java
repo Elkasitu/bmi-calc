@@ -1,6 +1,5 @@
 package esi.atl.g41163.bmr.view;
 
-import esi.atl.g41163.bmr.model.BmiMath.*;
 import static esi.atl.g41163.bmr.model.BmiMath.getBmi;
 import static esi.atl.g41163.bmr.model.BmiMath.getCal;
 import esi.atl.g41163.bmr.model.Lifestyles;
@@ -214,13 +213,16 @@ public class Main extends Application
                 double w = Double.parseDouble(dFields.get(1).getText());
                 double a = Double.parseDouble(dFields.get(2).getText());
                 
+                // Get selectable values
                 Lifestyles ls = (Lifestyles) lifestyle.getValue();
                 double multiplier = ls.getMult();
                 boolean g = gender.selectedProperty().get();
                 
+                // Calculate bmi and calories expenses
                 double bmi = getBmi(s, w, a, g);
                 double cal = getCal(bmi, multiplier);
                 
+                // Display bmi and calories expenses
                 succeed(rFields, new double[] {bmi, cal});
                 
             }
